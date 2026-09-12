@@ -1,0 +1,21 @@
+Source: autosub-ai
+Section: utils
+Priority: optional
+Maintainer: rosan-f <rosan-f@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13), python3
+Standards-Version: 4.6.2
+Homepage: https://github.com/rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-Generator
+
+Package: autosub-ai
+Architecture: amd64
+Depends: ffmpeg, ${shlibs:Depends}, ${misc:Depends}
+Description: CLI Video Translator & Subtitle Generator
+ AutoSub-AI adalah tools CLI untuk mengotomatisasi proses
+ transkripsi dan terjemahan video edukasi menjadi subtitle .srt
+ menggunakan OpenAI Whisper dan yt-dlp.
+ .
+ Fitur utama:
+  - Ekstraksi audio cerdas via yt-dlp
+  - Transkripsi AI lokal (OpenAI Whisper)
+  - Akselerasi GPU (CUDA)
+  - Generator subtitle .srt otomatis

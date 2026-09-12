@@ -1,0 +1,106 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "autosub-ai"
+version = "0.1.0"
+description = "CLI Video Translator & Subtitle Generator — Otomatisasi transkripsi dan terjemahan video edukasi menjadi subtitle .srt"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "rosan-f", email = "rosan-f@users.noreply.github.com" },
+]
+keywords = ["subtitle", "transcription", "whisper", "translation", "cli", "video", "srt"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Education",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Multimedia :: Video",
+]
+
+dependencies = [
+    "openai-whisper>=20231117",
+    "yt-dlp>=2024.01.01",
+    "typer[all]>=0.12.0",
+    "rich>=13.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.5.0",
+    "bandit>=1.7.0",
+    "pip-audit>=2.7.0",
+    "mypy>=1.10.0",
+]
+
+[project.scripts]
+autosub-ai = "autosub_ai.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-Generator"
+Repository = "https://github.com/rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-Generator"
+Issues = "https://github.com/rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-Generator/issues"
+
+# === Tool Configurations ===
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/autosub_ai"]
+
+[tool.ruff]
+src = ["src"]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "S",    # flake8-bandit (security)
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "PT",   # flake8-pytest-style
+    "RET",  # flake8-return
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "UP",   # pyupgrade
+]
+ignore = [
+    "S603",  # subprocess calls — we handle this manually
+    "S607",  # partial executable path
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]  # Allow assert in tests
+
+[tool.bandit]
+targets = ["src/autosub_ai"]
+exclude_dirs = ["tests"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --tb=short"

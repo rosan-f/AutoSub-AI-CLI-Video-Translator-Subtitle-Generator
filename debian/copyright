@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: autosub-ai
+Upstream-Contact: rosan-f <rosan-f@users.noreply.github.com>
+Source: https://github.com/rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-Generator
+
+Files: *
+Copyright: 2026 rosan-f
+License: MIT

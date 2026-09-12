@@ -1,0 +1,73 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+
+# === Virtual Environments ===
+.venv/
+venv/
+env/
+ENV/
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === Environment & Secrets ===
+.env
+*.pem
+*.key
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === AutoSub-AI Specific ===
+# Output subtitle files (generated)
+output/
+*.srt
+
+# Downloaded audio files (temporary)
+downloads/
+*.wav
+*.mp3
+*.m4a
+*.webm
+*.opus
+
+# Whisper model cache (large files)
+models/
+*.pt
+*.bin
+
+# PyInstaller build
+*.spec
+dist/
+build/
+
+# Debian packaging artifacts
+*.deb
+*.buildinfo
+*.changes
+debian/.debhelper/
+debian/autosub-ai/
+
+# Logs
+*.log
+logs/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml

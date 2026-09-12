@@ -1,0 +1,8 @@
+autosub-ai (0.1.0-1) unstable; urgency=low
+
+  * Initial release
+  * Core module skeletons (downloader, transcriber, translator, formatter)
+  * CLI interface with Typer + Rich
+  * Security utilities (input validation, path traversal guard)
+
+ -- rosan-f <rosan-f@users.noreply.github.com>  Mon, 15 Sep 2026 21:00:00 +0700
