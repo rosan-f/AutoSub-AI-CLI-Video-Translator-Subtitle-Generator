@@ -1,8 +1,8 @@
 """
-AutoSub-AI: CLI Video Translator & Subtitle Generator
+AutoSub-AI — CLI Video Translator & Subtitle Generator
 
-Otomatisasi transkripsi dan terjemahan video edukasi menjadi subtitle .srt
-menggunakan OpenAI Whisper dan yt-dlp.
+Automates video transcription and translation into .srt subtitle files
+using OpenAI Whisper and yt-dlp.
 """
 
 __version__ = "0.1.0"

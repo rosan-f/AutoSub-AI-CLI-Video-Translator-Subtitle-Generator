@@ -1,1 +1,1 @@
-"""Utility modules untuk AutoSub-AI."""
+"""Utility modules for AutoSub-AI."""

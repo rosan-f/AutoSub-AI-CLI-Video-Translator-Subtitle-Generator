@@ -1,4 +1,4 @@
-"""Tests untuk Translator Module."""
+"""Tests for the Translator module."""
 
 from __future__ import annotations
 
@@ -9,20 +9,20 @@ from autosub_ai.exceptions import TranslationError
 
 
 class TestTextTranslator:
-    """Tests untuk TextTranslator."""
+    """Tests for TextTranslator."""
 
     def test_init_valid_language(self) -> None:
-        """Translator harus menerima bahasa yang didukung."""
+        """Translator must accept supported languages."""
         translator = TextTranslator(target_language="id")
         assert translator.target_language == "id"
 
     def test_init_invalid_language_raises(self) -> None:
-        """Translator harus menolak bahasa yang tidak didukung."""
-        with pytest.raises(TranslationError, match="tidak didukung"):
+        """Translator must reject unsupported languages."""
+        with pytest.raises(TranslationError, match="not supported"):
             TextTranslator(target_language="xx")
 
     @pytest.mark.parametrize("lang", ["id", "en", "ja", "ko", "zh"])
     def test_supported_languages(self, lang: str) -> None:
-        """Semua bahasa yang didukung harus diterima."""
+        """All listed languages must be accepted."""
         translator = TextTranslator(target_language=lang)
         assert translator.target_language == lang

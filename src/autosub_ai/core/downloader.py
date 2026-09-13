@@ -1,11 +1,13 @@
 """
-Downloader Module — Ekstraksi audio dari video menggunakan yt-dlp.
+AutoSub-AI — Downloader Module
 
-Fitur keamanan:
-- Validasi URL dengan whitelist domain
-- Sanitasi nama file output
-- Subprocess call tanpa shell injection
-- Timeout untuk mencegah hang
+Handles audio extraction from video URLs using yt-dlp.
+
+Security measures:
+- URL validation against domain whitelist
+- Output filename sanitization
+- Subprocess calls via list args (no shell injection)
+- Configurable timeout to prevent hangs
 """
 
 from __future__ import annotations
@@ -20,36 +22,49 @@ from autosub_ai.utils.validators import validate_url
 
 logger = logging.getLogger(__name__)
 
-# Konfigurasi default
+# ================================================================
+# Constants
+# ================================================================
+
 DEFAULT_AUDIO_FORMAT = "wav"
-DEFAULT_AUDIO_QUALITY = "0"  # Best quality
-DEFAULT_SAMPLE_RATE = 16000  # 16kHz — optimal untuk Whisper
-DEFAULT_TIMEOUT = 600  # 10 menit timeout
+DEFAULT_AUDIO_QUALITY = "0"
+DEFAULT_SAMPLE_RATE = 16000       # 16kHz — optimal for Whisper
+DEFAULT_TIMEOUT = 600             # 10 minutes
+
+
+# ================================================================
+# Data Models
+# ================================================================
 
 
 @dataclass
 class DownloadResult:
-    """Hasil dari proses download audio."""
+    """Container for audio download results."""
 
     audio_path: Path
     title: str
-    duration: float  # Durasi dalam detik
+    duration: float               # Duration in seconds
     source_url: str
+
+
+# ================================================================
+# Downloader
+# ================================================================
 
 
 @dataclass
 class AudioDownloader:
     """
-    Mengelola download dan ekstraksi audio dari video.
+    Manages audio download and extraction from video sources.
 
-    Menggunakan yt-dlp sebagai backend untuk mendukung berbagai
-    platform video (YouTube, dll) tanpa perlu download video penuh.
+    Uses yt-dlp as the backend to support multiple video platforms
+    (YouTube, etc.) without downloading the full video stream.
 
     Attributes:
-        output_dir: Direktori output untuk file audio.
-        audio_format: Format audio output (default: wav).
-        sample_rate: Sample rate audio (default: 16000 Hz).
-        timeout: Timeout download dalam detik.
+        output_dir:   Directory for downloaded audio files.
+        audio_format: Output audio format (default: wav).
+        sample_rate:  Audio sample rate (default: 16000 Hz).
+        timeout:      Download timeout in seconds.
     """
 
     output_dir: Path = field(default_factory=lambda: Path("./downloads"))
@@ -58,58 +73,55 @@ class AudioDownloader:
     timeout: int = DEFAULT_TIMEOUT
 
     def __post_init__(self) -> None:
-        """Validasi dan buat direktori output jika belum ada."""
+        """Validate configuration and create output directory."""
         self.output_dir = safe_resolve_path(Path.cwd(), self.output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         logger.debug("Output directory: %s", self.output_dir)
 
+    # ----------------------------------------------------------------
+    # Public API
+    # ----------------------------------------------------------------
+
     def download(self, url: str) -> DownloadResult:
         """
-        Download dan ekstrak audio dari URL video.
+        Download and extract audio from a video URL.
 
         Args:
-            url: URL video yang valid (sudah divalidasi).
+            url: A valid, whitelisted video URL.
 
         Returns:
-            DownloadResult dengan path ke file audio.
+            DownloadResult containing the path to the extracted audio.
 
         Raises:
-            InvalidURLError: Jika URL tidak valid.
-            DownloadError: Jika proses download gagal.
+            InvalidURLError: If the URL is invalid or not whitelisted.
+            DownloadError:   If the download process fails.
         """
-        # Validasi URL
         validated_url = validate_url(url)
-        logger.info("Memulai download audio dari: %s", validated_url)
+        logger.info("Starting audio download: %s", validated_url)
 
         try:
-            # Import yt-dlp hanya saat dibutuhkan (lazy import)
             import yt_dlp  # noqa: S404
 
-            # Konfigurasi yt-dlp yang aman
             ydl_opts = self._build_ydl_options()
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                # Ekstrak info terlebih dahulu (tanpa download)
+                # --- Extract metadata (no download) ---
                 info = ydl.extract_info(validated_url, download=False)
                 if info is None:
-                    raise DownloadError(f"Tidak dapat mengekstrak info dari: {validated_url}")
+                    raise DownloadError(f"Cannot extract info from: {validated_url}")
 
-                # Sanitasi judul untuk nama file
                 title = sanitize_filename(info.get("title", "untitled"))
                 duration = float(info.get("duration", 0))
+                logger.info("Video: %s (%.1f min)", title, duration / 60)
 
-                logger.info("Video: %s (%.1f menit)", title, duration / 60)
-
-                # Download audio
+                # --- Download audio stream ---
                 ydl.download([validated_url])
 
-                # Tentukan path output
                 audio_path = self.output_dir / f"{title}.{self.audio_format}"
-
                 if not audio_path.exists():
-                    raise DownloadError(f"File audio tidak ditemukan: {audio_path}")
+                    raise DownloadError(f"Audio file not found after download: {audio_path}")
 
-                logger.info("Audio berhasil didownload: %s", audio_path)
+                logger.info("Audio downloaded: %s", audio_path)
 
                 return DownloadResult(
                     audio_path=audio_path,
@@ -120,30 +132,34 @@ class AudioDownloader:
 
         except ImportError:
             raise DownloadError(
-                "yt-dlp tidak terinstal. Jalankan: pip install yt-dlp"
+                "yt-dlp is not installed. Run: pip install yt-dlp"
             ) from None
         except DownloadError:
             raise
         except Exception as e:
-            logger.exception("Download gagal")
-            raise DownloadError(f"Download gagal: {type(e).__name__}") from e
+            logger.exception("Download failed")
+            raise DownloadError(f"Download failed: {type(e).__name__}") from e
+
+    # ----------------------------------------------------------------
+    # Private Methods
+    # ----------------------------------------------------------------
 
     def _build_ydl_options(self) -> dict:
         """
-        Bangun opsi konfigurasi yt-dlp yang aman.
+        Build a safe yt-dlp configuration dictionary.
 
         Returns:
-            Dictionary konfigurasi yt-dlp.
+            yt-dlp options with security-hardened defaults.
         """
         return {
-            # Format: audio only, quality terbaik
+            # --- Format ---
             "format": "bestaudio/best",
             "extractaudio": True,
             "audioformat": self.audio_format,
             "audioquality": DEFAULT_AUDIO_QUALITY,
-            # Output
+            # --- Output ---
             "outtmpl": str(self.output_dir / "%(title)s.%(ext)s"),
-            # Postprocessor untuk konversi format
+            # --- Post-processing ---
             "postprocessors": [
                 {
                     "key": "FFmpegExtractAudio",
@@ -151,12 +167,12 @@ class AudioDownloader:
                     "preferredquality": DEFAULT_AUDIO_QUALITY,
                 }
             ],
-            # Keamanan
+            # --- Logging ---
             "quiet": True,
             "no_warnings": True,
+            # --- Security ---
             "socket_timeout": self.timeout,
             "retries": 3,
-            # Nonaktifkan fitur yang bisa jadi risiko keamanan
-            "no_exec": True,  # Jangan eksekusi external commands
-            "geo_bypass": False,  # Jangan bypass geo-restriction
+            "no_exec": True,
+            "geo_bypass": False,
         }

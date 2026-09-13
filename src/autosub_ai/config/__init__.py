@@ -1,1 +1,1 @@
-"""Configuration management untuk AutoSub-AI."""
+"""Configuration management for AutoSub-AI."""

@@ -1,14 +1,15 @@
 """
-Settings Module — Manajemen konfigurasi berbasis Pydantic.
+AutoSub-AI — Settings Module
 
-Semua konfigurasi dimuat dari environment variables dan/atau file .env
-dengan validasi ketat menggunakan Pydantic v2.
+Pydantic v2 based configuration management.
+All settings are loaded from environment variables and/or .env files
+with strict validation.
 
-Urutan prioritas:
-1. CLI arguments (tertinggi)
+Priority order (highest to lowest):
+1. CLI arguments
 2. Environment variables
-3. File .env
-4. Default values (terendah)
+3. .env file
+4. Default values
 """
 
 from __future__ import annotations
@@ -23,8 +24,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 logger = logging.getLogger(__name__)
 
 
+# ================================================================
+# Enumerations
+# ================================================================
+
+
 class ModelSize(str, Enum):
-    """Ukuran model Whisper yang tersedia."""
+    """Available Whisper model sizes."""
 
     TINY = "tiny"
     BASE = "base"
@@ -34,7 +40,7 @@ class ModelSize(str, Enum):
 
 
 class LogLevel(str, Enum):
-    """Level logging yang tersedia."""
+    """Available logging levels."""
 
     DEBUG = "DEBUG"
     INFO = "INFO"
@@ -42,12 +48,17 @@ class LogLevel(str, Enum):
     ERROR = "ERROR"
 
 
+# ================================================================
+# Application Settings
+# ================================================================
+
+
 class AppSettings(BaseSettings):
     """
-    Konfigurasi aplikasi AutoSub-AI.
+    AutoSub-AI application configuration.
 
-    Semua setting divalidasi secara ketat oleh Pydantic v2.
-    Nilai dimuat otomatis dari environment variables dengan prefix AUTOSUB_.
+    All settings are strictly validated by Pydantic v2.
+    Values are loaded from environment variables prefixed with AUTOSUB_.
     """
 
     model_config = SettingsConfigDict(
@@ -55,74 +66,82 @@ class AppSettings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
-        extra="ignore",  # Abaikan env vars yang tidak dikenal
+        extra="ignore",
     )
 
-    # === Model Settings ===
+    # --- Model ---
     model_size: ModelSize = Field(
         default=ModelSize.BASE,
-        description="Ukuran model Whisper (tiny/base/small/medium/large).",
+        description="Whisper model size (tiny/base/small/medium/large).",
     )
 
-    # === Language Settings ===
+    # --- Language ---
     target_language: str = Field(
         default="id",
         min_length=2,
         max_length=5,
-        description="Kode bahasa target (ISO 639-1).",
+        description="Target language code (ISO 639-1).",
     )
 
-    # === Path Settings ===
+    # --- Paths ---
     output_dir: Path = Field(
         default=Path("./output"),
-        description="Direktori output file .srt.",
+        description="Output directory for .srt files.",
     )
     download_dir: Path = Field(
         default=Path("./downloads"),
-        description="Direktori penyimpanan audio sementara.",
+        description="Temporary audio download directory.",
     )
 
-    # === Performance Settings ===
+    # --- Performance ---
     use_gpu: bool = Field(
         default=True,
-        description="Aktifkan akselerasi GPU (CUDA).",
+        description="Enable GPU acceleration (CUDA).",
     )
 
-    # === Logging ===
+    # --- Logging ---
     log_level: LogLevel = Field(
         default=LogLevel.INFO,
-        description="Level logging aplikasi.",
+        description="Application log level.",
     )
+
+    # ----------------------------------------------------------------
+    # Validators
+    # ----------------------------------------------------------------
 
     @field_validator("target_language")
     @classmethod
     def validate_language_code(cls, v: str) -> str:
-        """Validasi kode bahasa: hanya huruf lowercase."""
+        """Validate language code: lowercase alphabetic only."""
         cleaned = v.lower().strip()
         if not cleaned.isalpha():
-            msg = f"Kode bahasa harus berupa huruf saja, diterima: '{v}'"
+            msg = f"Language code must be alphabetic, received: '{v}'"
             raise ValueError(msg)
         return cleaned
 
     @field_validator("output_dir", "download_dir")
     @classmethod
     def validate_paths(cls, v: Path) -> Path:
-        """Pastikan path tidak mengandung komponen berbahaya."""
+        """Reject paths containing traversal components."""
         path_str = str(v)
-        # Cegah path traversal
         if ".." in path_str:
-            msg = f"Path tidak boleh mengandung '..': {path_str}"
+            msg = f"Path must not contain '..': {path_str}"
             raise ValueError(msg)
         return v
 
 
+# ================================================================
+# Factory
+# ================================================================
+
+
 def get_settings() -> AppSettings:
     """
-    Muat dan kembalikan settings aplikasi.
+    Load and return validated application settings.
 
     Returns:
-        AppSettings instance yang sudah divalidasi.
+        Fully validated AppSettings instance.
     """
     settings = AppSettings()
-    logger.debug("Settings dimuat: model=%s, gpu=%s", settings.model_size, settings.use_gpu)
+    logger.debug("Settings loaded: model=%s, gpu=%s", settings.model_size, settings.use_gpu)
     return settings

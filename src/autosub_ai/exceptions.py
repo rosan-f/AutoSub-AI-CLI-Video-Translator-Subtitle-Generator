@@ -1,88 +1,98 @@
 """
-Custom Exception Hierarchy untuk AutoSub-AI.
+AutoSub-AI — Exception Hierarchy
 
-Semua exception diorganisir dalam hierarki yang jelas agar:
-- Error handling konsisten di seluruh codebase
-- Pesan error aman (tidak expose stack trace internal ke user)
-- Mudah di-catch secara spesifik atau general
+All exceptions are organized in a clear hierarchy to ensure:
+- Consistent error handling across the codebase
+- Safe error messages (no internal stack traces exposed to users)
+- Granular catch capability at any level
 """
 
 
 class AutoSubError(Exception):
-    """Base exception untuk semua error AutoSub-AI."""
+    """Base exception for all AutoSub-AI errors."""
 
-    def __init__(self, message: str = "Terjadi kesalahan pada AutoSub-AI.") -> None:
+    def __init__(self, message: str = "An internal error occurred.") -> None:
         self.message = message
         super().__init__(self.message)
 
 
-# === Download Errors ===
+# ================================================================
+# Download Errors
+# ================================================================
 
 
 class DownloadError(AutoSubError):
-    """Error saat proses download audio dari video."""
+    """Raised when audio download from a video source fails."""
 
-    def __init__(self, message: str = "Gagal mengunduh audio dari video.") -> None:
+    def __init__(self, message: str = "Failed to download audio from video.") -> None:
         super().__init__(message)
 
 
 class InvalidURLError(DownloadError):
-    """URL yang diberikan tidak valid atau tidak didukung."""
+    """Raised when the provided URL is invalid or unsupported."""
 
     def __init__(self, url: str = "") -> None:
-        sanitized = url[:200] if url else "unknown"  # Batasi panjang URL di pesan error
-        super().__init__(f"URL tidak valid atau tidak didukung: {sanitized}")
+        sanitized = url[:200] if url else "unknown"
+        super().__init__(f"Invalid or unsupported URL: {sanitized}")
 
 
-# === Transcription Errors ===
+# ================================================================
+# Transcription Errors
+# ================================================================
 
 
 class TranscriptionError(AutoSubError):
-    """Error saat proses transkripsi audio."""
+    """Raised when audio transcription fails."""
 
-    def __init__(self, message: str = "Gagal melakukan transkripsi audio.") -> None:
+    def __init__(self, message: str = "Failed to transcribe audio.") -> None:
         super().__init__(message)
 
 
 class ModelLoadError(TranscriptionError):
-    """Gagal memuat model Whisper."""
+    """Raised when a Whisper model fails to load."""
 
     def __init__(self, model_name: str = "") -> None:
-        super().__init__(f"Gagal memuat model Whisper: '{model_name}'")
+        super().__init__(f"Failed to load Whisper model: '{model_name}'")
 
 
-# === Translation Errors ===
+# ================================================================
+# Translation Errors
+# ================================================================
 
 
 class TranslationError(AutoSubError):
-    """Error saat proses terjemahan teks."""
+    """Raised when text translation fails."""
 
-    def __init__(self, message: str = "Gagal melakukan terjemahan teks.") -> None:
+    def __init__(self, message: str = "Failed to translate text.") -> None:
         super().__init__(message)
 
 
-# === Formatter Errors ===
+# ================================================================
+# Formatter Errors
+# ================================================================
 
 
 class FormatterError(AutoSubError):
-    """Error saat proses pembuatan file .srt."""
+    """Raised when .srt file generation fails."""
 
-    def __init__(self, message: str = "Gagal membuat file subtitle (.srt).") -> None:
+    def __init__(self, message: str = "Failed to generate subtitle file (.srt).") -> None:
         super().__init__(message)
 
 
-# === Validation & Security Errors ===
+# ================================================================
+# Validation & Security Errors
+# ================================================================
 
 
 class ValidationError(AutoSubError):
-    """Error validasi input pengguna."""
+    """Raised when user input fails validation."""
 
-    def __init__(self, message: str = "Input tidak valid.") -> None:
+    def __init__(self, message: str = "Invalid input.") -> None:
         super().__init__(message)
 
 
 class SecurityError(AutoSubError):
-    """Error terkait keamanan (path traversal, injection, dll)."""
+    """Raised when a security violation is detected (path traversal, injection, etc.)."""
 
-    def __init__(self, message: str = "Operasi ditolak karena alasan keamanan.") -> None:
+    def __init__(self, message: str = "Operation denied for security reasons.") -> None:
         super().__init__(message)

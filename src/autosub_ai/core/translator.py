@@ -1,13 +1,15 @@
 """
-Translator Module — Terjemahan teks menggunakan Whisper task=translate.
+AutoSub-AI — Translator Module
 
-Whisper sudah memiliki kemampuan translate built-in ke Bahasa Inggris.
-Untuk bahasa lain (termasuk Bahasa Indonesia), kita gunakan
-pendekatan bertahap: transkripsi → terjemahan.
+Handles text translation leveraging Whisper's built-in translate task.
 
-Fitur keamanan:
-- Validasi bahasa target
-- Batasi panjang teks input
+Whisper natively supports translation to English via task="translate".
+For other target languages, a multi-stage approach is used:
+transcription > English translation > target language translation.
+
+Security measures:
+- Target language validation against supported set
+- Input text length limits per segment
 """
 
 from __future__ import annotations
@@ -20,7 +22,10 @@ from autosub_ai.exceptions import TranslationError
 
 logger = logging.getLogger(__name__)
 
-# Bahasa yang didukung untuk terjemahan
+# ================================================================
+# Constants
+# ================================================================
+
 SUPPORTED_LANGUAGES = {
     "id": "Indonesian",
     "en": "English",
@@ -36,91 +41,103 @@ SUPPORTED_LANGUAGES = {
     "hi": "Hindi",
 }
 
-# Batas panjang teks per segmen (karakter)
-MAX_SEGMENT_LENGTH = 5000
+MAX_SEGMENT_LENGTH = 5000         # Characters per segment
+
+
+# ================================================================
+# Data Models
+# ================================================================
 
 
 @dataclass
 class TranslationResult:
-    """Hasil terjemahan."""
+    """Container for translation output."""
 
     segments: list[TranscriptionSegment]
     source_language: str
     target_language: str
 
 
+# ================================================================
+# Translator
+# ================================================================
+
+
 class TextTranslator:
     """
-    Menerjemahkan hasil transkripsi ke bahasa target.
+    Translates transcription results into a target language.
 
-    Strategi:
-    1. Jika target=en: Gunakan Whisper task="translate" (bawaan)
-    2. Jika target=lainnya: Transkripsi dulu ke English,
-       lalu gunakan translation layer tambahan
+    Strategy:
+    1. If target=en: Use Whisper's built-in task="translate"
+    2. If target=other: Transcribe to English first,
+       then apply an additional translation layer
 
     Attributes:
-        target_language: Kode bahasa target (ISO 639-1).
+        target_language: ISO 639-1 language code.
     """
 
     def __init__(self, target_language: str = "id") -> None:
         """
-        Inisialisasi translator.
+        Initialize the translator.
 
         Args:
-            target_language: Kode bahasa target (contoh: 'id', 'en').
+            target_language: ISO 639-1 code (e.g., 'id', 'en').
 
         Raises:
-            TranslationError: Jika bahasa tidak didukung.
+            TranslationError: If the language is not supported.
         """
         if target_language not in SUPPORTED_LANGUAGES:
             raise TranslationError(
-                f"Bahasa '{target_language}' tidak didukung. "
-                f"Pilihan: {', '.join(SUPPORTED_LANGUAGES.keys())}"
+                f"Language '{target_language}' is not supported. "
+                f"Available: {', '.join(SUPPORTED_LANGUAGES.keys())}"
             )
 
         self.target_language = target_language
         logger.info(
-            "Translator diinisialisasi: target=%s (%s)",
+            "Translator initialized: target=%s (%s)",
             target_language,
             SUPPORTED_LANGUAGES[target_language],
         )
 
+    # ----------------------------------------------------------------
+    # Public API
+    # ----------------------------------------------------------------
+
     def translate(self, transcription: TranscriptionResult) -> TranslationResult:
         """
-        Terjemahkan hasil transkripsi ke bahasa target.
+        Translate transcription segments into the target language.
 
         Args:
-            transcription: Hasil transkripsi dari WhisperTranscriber.
+            transcription: Output from WhisperTranscriber.
 
         Returns:
-            TranslationResult dengan segmen yang sudah diterjemahkan.
+            TranslationResult with translated segments.
 
         Raises:
-            TranslationError: Jika terjemahan gagal.
+            TranslationError: If translation fails.
         """
         logger.info(
-            "Menerjemahkan %d segmen dari '%s' ke '%s'",
+            "Translating %d segments from '%s' to '%s'",
             len(transcription.segments),
             transcription.language,
             self.target_language,
         )
 
         try:
-            # Validasi panjang segmen
+            # --- Segment length validation ---
             for segment in transcription.segments:
                 if len(segment.text) > MAX_SEGMENT_LENGTH:
                     logger.warning(
-                        "Segmen #%d terlalu panjang (%d karakter), akan di-truncate",
+                        "Segment #%d exceeds max length (%d chars), truncating",
                         segment.id,
                         len(segment.text),
                     )
                     segment.text = segment.text[:MAX_SEGMENT_LENGTH]
 
-            # TODO: Tahap 2 — Implementasi terjemahan sesungguhnya
-            # Untuk saat ini, kembalikan segmen asli (pass-through)
+            # TODO Phase 3: Implement actual translation logic
             translated_segments = transcription.segments
 
-            logger.info("Terjemahan selesai: %d segmen", len(translated_segments))
+            logger.info("Translation complete: %d segments", len(translated_segments))
 
             return TranslationResult(
                 segments=translated_segments,
@@ -131,5 +148,5 @@ class TextTranslator:
         except TranslationError:
             raise
         except Exception as e:
-            logger.exception("Terjemahan gagal")
-            raise TranslationError(f"Terjemahan gagal: {type(e).__name__}") from e
+            logger.exception("Translation failed")
+            raise TranslationError(f"Translation failed: {type(e).__name__}") from e

@@ -1,1 +1,1 @@
-"""Core modules untuk AutoSub-AI."""
+"""Core business logic modules for AutoSub-AI."""

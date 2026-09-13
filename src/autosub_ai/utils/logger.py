@@ -1,16 +1,18 @@
 """
-Logger Module — Structured logging dengan Rich handler.
+AutoSub-AI — Logger Module
 
-Menyediakan logging yang konsisten dan aman di seluruh aplikasi.
-- Format terstruktur untuk debugging
-- Rich handler untuk output terminal yang cantik
-- Tidak pernah log informasi sensitif (URL penuh, path absolut sistem, dll)
+Structured logging with Rich terminal handler.
+
+Design constraints:
+- Structured format for debugging
+- Rich handler for formatted terminal output
+- Sensitive information (full URLs, absolute system paths) is never logged
+- Third-party library noise is suppressed
 """
 
 from __future__ import annotations
 
 import logging
-import sys
 
 from rich.console import Console
 from rich.logging import RichHandler
@@ -18,38 +20,34 @@ from rich.logging import RichHandler
 
 def setup_logger(verbose: bool = False) -> logging.Logger:
     """
-    Setup dan konfigurasi root logger.
+    Configure and return the application root logger.
 
     Args:
-        verbose: Jika True, set level ke DEBUG. Default: INFO.
+        verbose: If True, set level to DEBUG. Default: INFO.
 
     Returns:
-        Logger instance yang sudah dikonfigurasi.
+        Configured Logger instance.
     """
     level = logging.DEBUG if verbose else logging.INFO
 
-    # Rich handler untuk output terminal yang informatif
+    # --- Rich terminal handler ---
     rich_handler = RichHandler(
         console=Console(stderr=True),
         show_time=True,
-        show_path=verbose,  # Hanya tampilkan file path di verbose mode
+        show_path=verbose,
         rich_tracebacks=True,
-        tracebacks_show_locals=verbose,  # Hanya tampilkan locals di verbose mode
+        tracebacks_show_locals=verbose,
         markup=True,
     )
 
-    # Format log
-    log_format = "%(message)s"
-
-    # Konfigurasi root logger
     logging.basicConfig(
         level=level,
-        format=log_format,
+        format="%(message)s",
         handlers=[rich_handler],
-        force=True,  # Override konfigurasi sebelumnya
+        force=True,
     )
 
-    # Set level untuk library pihak ketiga agar tidak terlalu verbose
+    # --- Suppress third-party noise ---
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("yt_dlp").setLevel(logging.WARNING)
     logging.getLogger("whisper").setLevel(logging.WARNING)
@@ -58,6 +56,6 @@ def setup_logger(verbose: bool = False) -> logging.Logger:
     logger.setLevel(level)
 
     if verbose:
-        logger.debug("Verbose logging diaktifkan")
+        logger.debug("Verbose logging enabled")
 
     return logger

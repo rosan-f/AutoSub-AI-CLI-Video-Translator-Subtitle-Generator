@@ -3,64 +3,64 @@
 ## System Overview
 
 ```
-┌─────────────┐     ┌──────────────────┐     ┌──────────────┐     ┌───────────────┐
-│  CLI Input   │────▶│  Downloader      │────▶│  Transcriber │────▶│  Translator   │
-│  (Typer)     │     │  (yt-dlp)        │     │  (Whisper)   │     │  (Whisper)    │
-└─────────────┘     └──────────────────┘     └──────────────┘     └───────┬───────┘
-                                                                          │
-                    ┌──────────────────┐                                   │
-                    │  .srt Output     │◀────────────────────────────────  │
-                    │  (Subtitle File) │     ┌──────────────┐             │
-                    └──────────────────┘     │  Formatter   │◀────────────┘
-                                             │  (SRT Gen)   │
-                                             └──────────────┘
++--------------+     +------------------+     +---------------+     +----------------+
+|  CLI Input   |---->|  Downloader      |---->|  Transcriber  |---->|  Translator    |
+|  (Typer)     |     |  (yt-dlp)        |     |  (Whisper)    |     |  (Whisper)     |
++--------------+     +------------------+     +---------------+     +-------+--------+
+                                                                            |
+                     +------------------+                                   |
+                     |  .srt Output     |<----------------------------------+
+                     |  (Subtitle File) |     +---------------+             |
+                     +------------------+     |  Formatter    |<------------+
+                                              |  (SRT Gen)    |
+                                              +---------------+
 ```
 
 ## Module Responsibilities
 
 ### 1. CLI Layer (`cli.py`)
-- Parsing argumen dan opsi pengguna
-- Validasi input awal
-- Menampilkan progress dan hasil ke terminal
-- Orchestrasi pipeline
+- Parse user arguments and options
+- Perform initial input validation
+- Display progress and results to the terminal
+- Orchestrate the processing pipeline
 
 ### 2. Downloader (`core/downloader.py`)
-- Menerima URL video yang sudah divalidasi
-- Mengekstrak audio menggunakan yt-dlp
-- Menyimpan audio dalam format WAV 16kHz (optimal untuk Whisper)
-- Mengembalikan path file audio
+- Accept validated video URLs
+- Extract audio using yt-dlp
+- Output WAV at 16kHz (optimal for Whisper)
+- Return the audio file path
 
 ### 3. Transcriber (`core/transcriber.py`)
-- Memuat model Whisper sesuai konfigurasi
-- Auto-detect CUDA/CPU
-- Menghasilkan segmen teks dengan timestamp presisi
-- Cleanup GPU memory setelah selesai
+- Load the Whisper model per configuration
+- Auto-detect CUDA/CPU compute device
+- Produce text segments with precise timestamps
+- Clean up GPU memory after processing
 
 ### 4. Translator (`core/translator.py`)
-- Menerima segmen dari Transcriber
-- Menerjemahkan ke bahasa target
-- Validasi panjang segmen (cegah DoS)
+- Accept segments from the Transcriber
+- Translate to the target language
+- Enforce per-segment length limits
 
 ### 5. Formatter (`core/formatter.py`)
-- Mengonversi segmen ke format .srt standar
-- Sanitasi teks output
-- Atomic write (mencegah file corrupt)
+- Convert segments to standard .srt format
+- Sanitize text output
+- Perform atomic file writes to prevent corruption
 
 ## Security Architecture
 
 ```
-User Input ──▶ [Validators] ──▶ [Core Logic] ──▶ [Security Utils] ──▶ Output
-                    │                                    │
-                    ├── URL Whitelist                     ├── Filename Sanitization
-                    ├── Path Traversal Guard              ├── Safe Path Resolution
-                    ├── Model Size Enum                   └── Permission Check
-                    └── Length Limits
+User Input --> [Validators] --> [Core Logic] --> [Security Utils] --> Output
+                    |                                    |
+                    +-- URL Whitelist                     +-- Filename Sanitization
+                    +-- Path Traversal Guard              +-- Safe Path Resolution
+                    +-- Model Size Enum                   +-- Permission Check
+                    +-- Length Limits
 ```
 
 ## Data Flow
 
-1. **Input**: URL video dari CLI
-2. **Download**: Audio (WAV) disimpan di `./downloads/`
-3. **Transkripsi**: Audio → Segmen teks + timestamp
-4. **Terjemahan**: Segmen → Segmen terjemahan
-5. **Format**: Segmen → File `.srt` di `./output/`
+1. **Input**: Video URL from CLI
+2. **Download**: Audio (WAV) saved to `./downloads/`
+3. **Transcription**: Audio --> Text segments + timestamps
+4. **Translation**: Segments --> Translated segments
+5. **Format**: Segments --> `.srt` file in `./output/`

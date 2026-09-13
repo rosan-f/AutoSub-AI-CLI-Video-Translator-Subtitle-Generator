@@ -1,8 +1,10 @@
 """
-Validators Module — Validasi dan sanitasi input pengguna.
+AutoSub-AI — Input Validators
 
-Semua input dari CLI atau konfigurasi HARUS melewati validator ini
-sebelum diproses. Prinsip: treat all user input as untrusted.
+All user-facing input from CLI arguments or configuration must pass
+through these validators before processing.
+
+Principle: treat all user input as untrusted.
 """
 
 from __future__ import annotations
@@ -13,8 +15,10 @@ from urllib.parse import urlparse
 
 from autosub_ai.exceptions import InvalidURLError, ValidationError
 
-# === Domain Whitelist ===
-# Hanya URL dari domain ini yang diizinkan
+# ================================================================
+# Domain Whitelist
+# ================================================================
+
 ALLOWED_DOMAINS: frozenset[str] = frozenset({
     "youtube.com",
     "www.youtube.com",
@@ -23,7 +27,10 @@ ALLOWED_DOMAINS: frozenset[str] = frozenset({
     "music.youtube.com",
 })
 
-# === Model Sizes ===
+# ================================================================
+# Model Configuration
+# ================================================================
+
 VALID_MODEL_SIZES: frozenset[str] = frozenset({
     "tiny",
     "base",
@@ -32,130 +39,136 @@ VALID_MODEL_SIZES: frozenset[str] = frozenset({
     "large",
 })
 
-# Pola URL yang valid
+# ================================================================
+# URL Validation
+# ================================================================
+
 URL_PATTERN = re.compile(
-    r"^https?://"  # Harus dimulai dengan http:// atau https://
-    r"[a-zA-Z0-9]"  # Domain harus dimulai dengan alphanumeric
-    r"[a-zA-Z0-9\-\.]*"  # Domain body
-    r"\.[a-zA-Z]{2,}"  # TLD minimal 2 karakter
-    r"(/[^\s]*)?$",  # Path (opsional)
+    r"^https?://"
+    r"[a-zA-Z0-9]"
+    r"[a-zA-Z0-9\-\.]*"
+    r"\.[a-zA-Z]{2,}"
+    r"(/[^\s]*)?$",
 )
 
-# Panjang URL maksimum (cegah DoS)
 MAX_URL_LENGTH = 2048
 
 
 def validate_url(url: str) -> str:
     """
-    Validasi URL video terhadap whitelist dan format.
+    Validate a video URL against the domain whitelist and format rules.
 
     Args:
-        url: URL yang akan divalidasi.
+        url: The URL to validate.
 
     Returns:
-        URL yang sudah divalidasi dan dibersihkan.
+        The validated and cleaned URL.
 
     Raises:
-        InvalidURLError: Jika URL tidak valid atau domain tidak diizinkan.
+        InvalidURLError: If the URL is invalid or the domain is not whitelisted.
     """
     if not url or not isinstance(url, str):
-        raise InvalidURLError("URL kosong atau bukan string")
+        raise InvalidURLError("Empty or non-string URL")
 
-    # Strip whitespace
     url = url.strip()
 
-    # Cek panjang
+    # --- Length check ---
     if len(url) > MAX_URL_LENGTH:
-        raise InvalidURLError(f"URL terlalu panjang (maks {MAX_URL_LENGTH} karakter)")
+        raise InvalidURLError(f"URL exceeds maximum length ({MAX_URL_LENGTH} chars)")
 
-    # Cek format dasar
+    # --- Format check ---
     if not URL_PATTERN.match(url):
         raise InvalidURLError(url)
 
-    # Parse URL
+    # --- Parse and validate components ---
     try:
         parsed = urlparse(url)
     except Exception as e:
         raise InvalidURLError(url) from e
 
-    # Validasi scheme (hanya HTTPS/HTTP)
     if parsed.scheme not in ("http", "https"):
-        raise InvalidURLError(f"Scheme tidak didukung: {parsed.scheme}")
+        raise InvalidURLError(f"Unsupported scheme: {parsed.scheme}")
 
-    # Validasi domain terhadap whitelist
     domain = parsed.hostname
     if domain is None or domain not in ALLOWED_DOMAINS:
         raise InvalidURLError(
-            f"Domain '{domain}' tidak didukung. "
-            f"Domain yang diizinkan: {', '.join(sorted(ALLOWED_DOMAINS))}"
+            f"Domain '{domain}' is not supported. "
+            f"Allowed: {', '.join(sorted(ALLOWED_DOMAINS))}"
         )
 
-    # Cegah URL dengan credentials (user:pass@host)
+    # --- Reject embedded credentials ---
     if parsed.username or parsed.password:
-        raise InvalidURLError("URL tidak boleh mengandung credentials")
+        raise InvalidURLError("URL must not contain credentials")
 
     return url
 
 
+# ================================================================
+# Model Validation
+# ================================================================
+
+
 def validate_model_size(model: str) -> str:
     """
-    Validasi ukuran model Whisper.
+    Validate a Whisper model size identifier.
 
     Args:
-        model: Nama model yang akan divalidasi.
+        model: Model name to validate.
 
     Returns:
-        Nama model yang sudah divalidasi (lowercase).
+        Validated model name (lowercase).
 
     Raises:
-        ValidationError: Jika model tidak valid.
+        ValidationError: If the model name is not recognized.
     """
     if not model or not isinstance(model, str):
-        raise ValidationError("Model size tidak boleh kosong")
+        raise ValidationError("Model size must not be empty")
 
     cleaned = model.strip().lower()
 
     if cleaned not in VALID_MODEL_SIZES:
         raise ValidationError(
-            f"Model '{cleaned}' tidak valid. "
-            f"Pilihan: {', '.join(sorted(VALID_MODEL_SIZES))}"
+            f"Model '{cleaned}' is not valid. "
+            f"Available: {', '.join(sorted(VALID_MODEL_SIZES))}"
         )
 
     return cleaned
 
 
+# ================================================================
+# File Path Validation
+# ================================================================
+
+
 def validate_file_path(path: Path | str) -> Path:
     """
-    Validasi path file — pastikan ada dan aman.
+    Validate a file path for existence and safety.
 
     Args:
-        path: Path ke file yang akan divalidasi.
+        path: Path to the file to validate.
 
     Returns:
-        Path yang sudah divalidasi dan di-resolve.
+        Resolved absolute Path.
 
     Raises:
-        ValidationError: Jika path tidak valid atau tidak aman.
+        ValidationError: If the path is invalid, unsafe, or does not exist.
     """
     if not path:
-        raise ValidationError("Path file tidak boleh kosong")
+        raise ValidationError("File path must not be empty")
 
     path = Path(path)
 
-    # Cegah path traversal
+    # --- Path traversal guard ---
     path_str = str(path)
     if ".." in path_str:
-        raise ValidationError(f"Path tidak boleh mengandung '..': {path_str}")
+        raise ValidationError(f"Path must not contain '..': {path_str}")
 
-    # Resolve ke absolute path
     resolved = path.resolve()
 
-    # Pastikan file ada
     if not resolved.exists():
-        raise ValidationError(f"File tidak ditemukan: {resolved.name}")
+        raise ValidationError(f"File not found: {resolved.name}")
 
-    # Pastikan bukan direktori
     if resolved.is_dir():
-        raise ValidationError(f"Path adalah direktori, bukan file: {resolved.name}")
+        raise ValidationError(f"Path is a directory, not a file: {resolved.name}")
 
     return resolved

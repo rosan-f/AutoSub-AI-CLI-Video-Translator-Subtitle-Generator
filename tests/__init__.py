@@ -1,1 +1,1 @@
-"""Test suite untuk AutoSub-AI."""
+"""AutoSub-AI test suite."""

@@ -1,4 +1,4 @@
-# 🤖 AutoSub-AI
+# AutoSub-AI
 
 **CLI Video Translator & Subtitle Generator**
 
@@ -6,96 +6,94 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 
-AutoSub-AI adalah tools CLI untuk mengotomatisasi proses transkripsi dan terjemahan video edukasi berdurasi panjang (seperti materi keamanan siber atau bootcamp IT) menjadi subtitle berformat `.srt`.
+AutoSub-AI is a CLI tool that automates transcription and translation of long-form educational videos (cybersecurity courses, IT bootcamps, etc.) into standard `.srt` subtitle files.
 
-## ✨ Fitur Utama
+## Features
 
-| Fitur | Deskripsi |
-|-------|-----------|
-| 🎵 **Penyedot Audio Cerdas** | Ekstraksi audio langsung dari URL video tanpa download visual menggunakan `yt-dlp` |
-| 🧠 **Transkripsi AI Lokal** | Speech-to-Text offline menggunakan OpenAI Whisper |
-| ⚡ **Akselerasi GPU** | Dukungan NVIDIA CUDA untuk pemrosesan video belasan jam dalam hitungan menit |
-| 📝 **Subtitle Otomatis** | Generasi file `.srt` dengan timestamp presisi tinggi |
-| 📦 **Debian Package** | Distribusi mandiri via `.deb` — install sekali, langsung pakai |
+| Feature | Description |
+|---------|-------------|
+| **Smart Audio Extraction** | Extracts audio directly from video URLs without downloading visual streams, using `yt-dlp` |
+| **Local AI Transcription** | Offline speech-to-text powered by OpenAI Whisper |
+| **GPU Acceleration** | NVIDIA CUDA support for processing multi-hour videos in minutes |
+| **Automatic Subtitles** | Generates `.srt` files with high-precision timestamps |
+| **Debian Package** | Self-contained `.deb` distribution — install once, use anywhere |
 
-## 🏗️ Arsitektur
+## Architecture
 
 ```
-URL Video ──▶ Downloader ──▶ Transcriber ──▶ Translator ──▶ Formatter ──▶ .srt
-              (yt-dlp)       (Whisper AI)    (Whisper)      (SRT Gen)
+Video URL --> Downloader --> Transcriber --> Translator --> Formatter --> .srt
+              (yt-dlp)      (Whisper AI)    (Whisper)      (SRT Gen)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-### Install dari Source
+### Install from Source
 
 ```bash
-# Clone & install
 git clone git@github.com:rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-Generator.git
 cd AutoSub-AI-CLI-Video-Translator-Subtitle-Generator
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Jalankan
 autosub-ai transcribe "https://www.youtube.com/watch?v=VIDEO_ID" --language id
 ```
 
-### Install dari .deb
+### Install from .deb
 
 ```bash
 sudo dpkg -i autosub-ai_0.1.0_amd64.deb
 autosub-ai transcribe "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 
-## 📖 Usage
+## Usage
 
 ```bash
-# Transkripsi dengan model default (base)
-autosub-ai transcribe "URL_VIDEO"
+# Transcribe with default model (base)
+autosub-ai transcribe "URL"
 
-# Gunakan model lebih besar untuk akurasi tinggi
-autosub-ai transcribe "URL_VIDEO" --model large --language id
+# Use a larger model for higher accuracy
+autosub-ai transcribe "URL" --model large --language id
 
-# Tentukan direktori output
-autosub-ai transcribe "URL_VIDEO" --output ./subtitles
+# Specify output directory
+autosub-ai transcribe "URL" --output ./subtitles
 
-# Cek info sistem
+# Check system info
 autosub-ai info
 
 # Verbose mode
-autosub-ai transcribe "URL_VIDEO" --verbose
+autosub-ai transcribe "URL" --verbose
 ```
 
-## 🛡️ Keamanan
+## Security
 
-AutoSub-AI dibangun dengan prinsip **security-first**:
+AutoSub-AI is built with a security-first approach:
 
-- ✅ URL whitelist (hanya domain terpercaya)
-- ✅ Path traversal protection
-- ✅ Filename sanitization
-- ✅ No shell injection (subprocess dengan list args)
-- ✅ Secrets via environment variables
-- ✅ Dependency audit (`pip-audit` + `bandit`)
+- URL whitelist (trusted domains only)
+- Path traversal protection
+- Filename sanitization
+- No shell injection (subprocess via list args)
+- Secrets via environment variables
+- Dependency audit (`pip-audit` + `bandit`)
 
-Lihat [Security Policy](docs/SECURITY.md) untuk detail.
+See [Security Policy](docs/SECURITY.md) for details.
 
-## 🛠️ Teknologi
+## Technology Stack
 
-| Komponen | Teknologi |
-|----------|-----------|
-| Bahasa | Python 3.10+ |
+| Component | Technology |
+|-----------|------------|
+| Language | Python 3.10+ |
 | AI Engine | OpenAI Whisper, PyTorch (CUDA) |
 | CLI Framework | Typer + Rich |
 | Media | yt-dlp, FFmpeg |
-| Validasi | Pydantic v2 |
+| Validation | Pydantic v2 |
 | Packaging | PyInstaller, dpkg-deb |
 | Linting | Ruff, Bandit, MyPy |
 
-## 📁 Struktur Proyek
+## Project Structure
 
 ```
 AutoSub-AI/
-├── src/autosub_ai/          # Source code utama
+├── src/autosub_ai/          # Source code
 │   ├── cli.py               # CLI interface
 │   ├── core/                # Business logic
 │   │   ├── downloader.py    # Audio extraction (yt-dlp)
@@ -111,7 +109,7 @@ AutoSub-AI/
 └── docs/                    # Documentation
 ```
 
-## 🧪 Development
+## Development
 
 ```bash
 # Install dev dependencies
@@ -130,14 +128,14 @@ bandit -r src/autosub_ai/
 mypy src/autosub_ai/
 ```
 
-## 📋 Roadmap
+## Roadmap
 
-- [x] Tahap 1: Struktur proyek & fondasi
-- [ ] Tahap 2: Implementasi Downloader Module
-- [ ] Tahap 3: Implementasi Transcription Engine
-- [ ] Tahap 4: Implementasi Translator & Formatter
-- [ ] Tahap 5: Debian packaging & distribusi
+- [x] Phase 1: Project structure and foundation
+- [ ] Phase 2: Downloader Module implementation
+- [ ] Phase 3: Transcription Engine implementation
+- [ ] Phase 4: Translator and Formatter implementation
+- [ ] Phase 5: Debian packaging and distribution
 
-## 📄 Lisensi
+## License
 
-[MIT License](LICENSE) — © 2026 rosan-f
+[MIT License](LICENSE) — 2026 rosan-f

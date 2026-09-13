@@ -1,4 +1,4 @@
-"""Tests untuk Downloader Module (unit tests tanpa network)."""
+"""Tests for the Downloader module (unit tests, no network calls)."""
 
 from __future__ import annotations
 
@@ -11,22 +11,22 @@ from autosub_ai.exceptions import InvalidURLError
 
 
 class TestAudioDownloader:
-    """Tests untuk AudioDownloader."""
+    """Tests for AudioDownloader."""
 
     def test_init_creates_output_dir(self, tmp_download_dir: Path) -> None:
-        """Downloader harus membuat output dir jika belum ada."""
+        """Downloader must create the output directory if it does not exist."""
         new_dir = tmp_download_dir / "new_subdir"
         downloader = AudioDownloader(output_dir=new_dir)
         assert downloader.output_dir.exists()
 
     def test_download_invalid_url_raises(self, tmp_download_dir: Path) -> None:
-        """Download dengan URL invalid harus raise InvalidURLError."""
+        """Download with a non-whitelisted URL must raise InvalidURLError."""
         downloader = AudioDownloader(output_dir=tmp_download_dir)
         with pytest.raises(InvalidURLError):
             downloader.download("https://evil-site.com/hack")
 
     def test_download_result_dataclass(self) -> None:
-        """DownloadResult harus menyimpan data dengan benar."""
+        """DownloadResult must store data correctly."""
         result = DownloadResult(
             audio_path=Path("/tmp/test.wav"),
             title="Test Video",

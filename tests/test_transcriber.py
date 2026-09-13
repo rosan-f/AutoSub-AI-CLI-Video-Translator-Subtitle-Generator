@@ -1,4 +1,4 @@
-"""Tests untuk Transcriber Module (unit tests tanpa model loading)."""
+"""Tests for the Transcriber module (unit tests, no model loading)."""
 
 from __future__ import annotations
 
@@ -12,30 +12,40 @@ from autosub_ai.core.transcriber import (
 from autosub_ai.exceptions import ValidationError
 
 
+# ================================================================
+# WhisperTranscriber
+# ================================================================
+
+
 class TestWhisperTranscriber:
-    """Tests untuk WhisperTranscriber."""
+    """Tests for WhisperTranscriber."""
 
     def test_init_valid_model(self) -> None:
-        """Transcriber harus menerima model size yang valid."""
+        """Transcriber must accept valid model sizes."""
         transcriber = WhisperTranscriber(model_size="tiny")
         assert transcriber.model_size == "tiny"
 
     def test_init_invalid_model_raises(self) -> None:
-        """Transcriber harus menolak model size yang invalid."""
+        """Transcriber must reject invalid model sizes."""
         with pytest.raises(ValidationError):
             WhisperTranscriber(model_size="nonexistent")
 
     def test_device_detection(self) -> None:
-        """Device detection harus mengembalikan 'cuda' atau 'cpu'."""
+        """Device detection must return 'cuda' or 'cpu'."""
         transcriber = WhisperTranscriber(model_size="tiny")
         assert transcriber.device in ("cuda", "cpu")
 
 
+# ================================================================
+# Data Models
+# ================================================================
+
+
 class TestTranscriptionSegment:
-    """Tests untuk TranscriptionSegment."""
+    """Tests for TranscriptionSegment."""
 
     def test_segment_creation(self) -> None:
-        """Segment harus menyimpan data dengan benar."""
+        """Segment must store timing and text data correctly."""
         segment = TranscriptionSegment(
             id=0, start=0.0, end=2.5, text="Hello world"
         )
@@ -45,10 +55,10 @@ class TestTranscriptionSegment:
 
 
 class TestTranscriptionResult:
-    """Tests untuk TranscriptionResult."""
+    """Tests for TranscriptionResult."""
 
     def test_result_with_segments(self) -> None:
-        """Result harus menyimpan segmen dengan benar."""
+        """Result must hold segments correctly."""
         segments = [
             TranscriptionSegment(id=0, start=0.0, end=2.5, text="Hello"),
             TranscriptionSegment(id=1, start=2.5, end=5.0, text="World"),

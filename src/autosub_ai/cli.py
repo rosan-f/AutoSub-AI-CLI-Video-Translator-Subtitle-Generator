@@ -1,8 +1,8 @@
 """
-AutoSub-AI CLI Interface.
+AutoSub-AI — CLI Interface
 
-Menggunakan Typer + Rich untuk pengalaman CLI yang modern dan informatif.
-Semua input pengguna divalidasi sebelum diproses.
+Command-line interface built on Typer with Rich terminal output.
+All user input is validated before processing.
 """
 
 from pathlib import Path
@@ -15,7 +15,10 @@ from rich.panel import Panel
 from autosub_ai import __app_name__, __version__
 from autosub_ai.utils.logger import setup_logger
 
-# === Inisialisasi ===
+# ================================================================
+# Application Setup
+# ================================================================
+
 app = typer.Typer(
     name=__app_name__,
     help="AutoSub-AI: CLI Video Translator & Subtitle Generator",
@@ -26,8 +29,13 @@ app = typer.Typer(
 console = Console()
 
 
+# ================================================================
+# Callbacks
+# ================================================================
+
+
 def version_callback(value: bool) -> None:
-    """Tampilkan versi dan keluar."""
+    """Display version and exit."""
     if value:
         console.print(
             Panel(
@@ -46,31 +54,36 @@ def main(
         typer.Option(
             "--version",
             "-V",
-            help="Tampilkan versi AutoSub-AI.",
+            help="Show AutoSub-AI version.",
             callback=version_callback,
             is_eager=True,
         ),
     ] = None,
 ) -> None:
     """
-    🤖 [bold]AutoSub-AI[/bold]: CLI Video Translator & Subtitle Generator
+    [bold]AutoSub-AI[/bold]: CLI Video Translator & Subtitle Generator
 
-    Otomatisasi transkripsi dan terjemahan video edukasi menjadi subtitle .srt.
+    Automates video transcription and translation into .srt subtitle files.
     """
+
+
+# ================================================================
+# Commands
+# ================================================================
 
 
 @app.command()
 def transcribe(
     url: Annotated[
         str,
-        typer.Argument(help="URL video yang akan ditranskripsi (YouTube, dll)."),
+        typer.Argument(help="Video URL to transcribe (YouTube, etc.)."),
     ],
     model: Annotated[
         str,
         typer.Option(
             "--model",
             "-m",
-            help="Ukuran model Whisper: tiny, base, small, medium, large.",
+            help="Whisper model size: tiny, base, small, medium, large.",
         ),
     ] = "base",
     language: Annotated[
@@ -78,7 +91,7 @@ def transcribe(
         typer.Option(
             "--language",
             "-l",
-            help="Kode bahasa target terjemahan (ISO 639-1, contoh: id, en, ja).",
+            help="Target translation language code (ISO 639-1, e.g.: id, en, ja).",
         ),
     ] = "id",
     output: Annotated[
@@ -86,7 +99,7 @@ def transcribe(
         typer.Option(
             "--output",
             "-o",
-            help="Direktori output untuk file .srt.",
+            help="Output directory for .srt files.",
         ),
     ] = Path("./output"),
     verbose: Annotated[
@@ -94,20 +107,20 @@ def transcribe(
         typer.Option(
             "--verbose",
             "-v",
-            help="Aktifkan logging detail (debug mode).",
+            help="Enable debug logging.",
         ),
     ] = False,
 ) -> None:
     """
-    🎬 Transkripsi dan terjemahkan video menjadi subtitle .srt.
+    Transcribe and translate a video into an .srt subtitle file.
 
-    Proses: Download Audio → Transkripsi (Whisper) → Terjemahan → Generate .srt
+    Pipeline: Download Audio > Transcribe (Whisper) > Translate > Generate .srt
     """
-    # Setup logging level
+    # --- Logger Setup ---
     logger = setup_logger(verbose=verbose)
-    logger.info("AutoSub-AI dimulai...")
+    logger.info("AutoSub-AI started")
 
-    # === Validasi Input ===
+    # --- Input Validation ---
     from autosub_ai.utils.validators import validate_model_size, validate_url
 
     validated_url = validate_url(url)
@@ -119,15 +132,15 @@ def transcribe(
             f"[bold green]Model:[/bold green]    {validated_model}\n"
             f"[bold green]Language:[/bold green]  {language}\n"
             f"[bold green]Output:[/bold green]    {output.resolve()}",
-            title="⚙️  Konfigurasi",
+            title="Configuration",
             border_style="bright_green",
         )
     )
 
-    # === Pipeline (akan diimplementasi bertahap) ===
-    console.print("\n[yellow]⚠️  Pipeline belum diimplementasi. Coming soon![/yellow]\n")
+    # --- Pipeline (to be implemented in phases) ---
+    console.print("\n[yellow]Pipeline not yet implemented. Coming soon.[/yellow]\n")
 
-    # TODO: Tahap 2 — Implementasi pipeline:
+    # TODO Phase 2: Implement pipeline
     # 1. downloader.download(validated_url)
     # 2. transcriber.transcribe(audio_path)
     # 3. translator.translate(segments)
@@ -136,7 +149,7 @@ def transcribe(
 
 @app.command()
 def info() -> None:
-    """ℹ️  Tampilkan informasi sistem dan dependensi."""
+    """Display system information and dependency status."""
     import platform
     import shutil
 
@@ -145,9 +158,9 @@ def info() -> None:
             f"[bold]AutoSub-AI[/bold] v{__version__}\n\n"
             f"[cyan]Python:[/cyan]    {platform.python_version()}\n"
             f"[cyan]Platform:[/cyan]  {platform.system()} {platform.release()}\n"
-            f"[cyan]FFmpeg:[/cyan]    {'✅ Ditemukan' if shutil.which('ffmpeg') else '❌ Tidak ditemukan'}\n"
-            f"[cyan]yt-dlp:[/cyan]    {'✅ Ditemukan' if shutil.which('yt-dlp') else '❌ Tidak ditemukan'}",
-            title="📋 System Info",
+            f"[cyan]FFmpeg:[/cyan]    {'Found' if shutil.which('ffmpeg') else 'Not found'}\n"
+            f"[cyan]yt-dlp:[/cyan]    {'Found' if shutil.which('yt-dlp') else 'Not found'}",
+            title="System Info",
             border_style="bright_cyan",
         )
     )

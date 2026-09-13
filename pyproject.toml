@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "autosub-ai"
 version = "0.1.0"
-description = "CLI Video Translator & Subtitle Generator — Otomatisasi transkripsi dan terjemahan video edukasi menjadi subtitle .srt"
+description = "CLI tool for automated video transcription and translation into .srt subtitle files"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -55,7 +55,9 @@ Homepage = "https://github.com/rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-
 Repository = "https://github.com/rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-Generator"
 Issues = "https://github.com/rosan-f/AutoSub-AI-CLI-Video-Translator-Subtitle-Generator/issues"
 
-# === Tool Configurations ===
+# ================================================================
+# Tool Configuration
+# ================================================================
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/autosub_ai"]
@@ -83,12 +85,12 @@ select = [
     "UP",   # pyupgrade
 ]
 ignore = [
-    "S603",  # subprocess calls — we handle this manually
+    "S603",  # subprocess calls — handled manually
     "S607",  # partial executable path
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["S101"]  # Allow assert in tests
+"tests/**/*.py" = ["S101"]
 
 [tool.bandit]
 targets = ["src/autosub_ai"]

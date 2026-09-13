@@ -2,35 +2,35 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | ✅ Yes             |
+| Version | Supported |
+| ------- | --------- |
+| 0.1.x   | Yes       |
 
 ## Reporting a Vulnerability
 
-Jika Anda menemukan kerentanan keamanan di AutoSub-AI, silakan laporkan secara bertanggung jawab:
+If you discover a security vulnerability in AutoSub-AI, please report it responsibly:
 
-1. **JANGAN** buat public issue untuk kerentanan keamanan
-2. Kirim email ke: rosan-f@users.noreply.github.com
-3. Sertakan detail:
-   - Deskripsi kerentanan
-   - Langkah reproduksi
-   - Dampak potensial
-   - Saran perbaikan (jika ada)
+1. **Do not** create a public issue for security vulnerabilities
+2. Email: rosan-f@users.noreply.github.com
+3. Include:
+   - Description of the vulnerability
+   - Reproduction steps
+   - Potential impact
+   - Suggested fix (if applicable)
 
 ## Response Timeline
 
-- **24 jam**: Konfirmasi penerimaan laporan
-- **72 jam**: Penilaian awal dan rencana perbaikan
-- **7 hari**: Rilis patch keamanan
+- **24 hours**: Acknowledgment of report
+- **72 hours**: Initial assessment and remediation plan
+- **7 days**: Security patch release
 
 ## Security Measures
 
-AutoSub-AI menerapkan praktik keamanan berikut:
+AutoSub-AI implements the following security practices:
 
-- ✅ Validasi input ketat (URL whitelist, path traversal guard)
-- ✅ Sanitasi nama file output
-- ✅ Tidak ada shell injection (subprocess dengan list args)
-- ✅ Environment variables untuk konfigurasi sensitif
-- ✅ Dependency audit via `pip-audit` dan `bandit`
-- ✅ Custom exception hierarchy (tidak expose stack trace)
+- Input validation with URL domain whitelist and path traversal guard
+- Output filename sanitization against injection attacks
+- No shell injection — all subprocess calls use list arguments
+- Environment variables for sensitive configuration
+- Dependency audit via `pip-audit` and `bandit`
+- Custom exception hierarchy that does not expose stack traces

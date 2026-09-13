@@ -1,15 +1,14 @@
 """
-Entry point for running AutoSub-AI as a module.
+AutoSub-AI — Module entry point.
 
-Usage:
-    python -m autosub_ai
+Enables execution via: python -m autosub_ai
 """
 
 from autosub_ai.cli import app
 
 
 def main() -> None:
-    """Main entry point."""
+    """Application entry point."""
     app()
 
 

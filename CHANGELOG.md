@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Initial project structure and foundation
 - Core module skeletons (downloader, transcriber, translator, formatter)
 - Security utilities (input validation, path traversal guard, URL whitelist)
-- CLI interface with Typer + Rich
+- CLI interface with Typer and Rich
 - Debian packaging skeleton
-- Comprehensive test suite structure
+- Comprehensive test suite
 - Project documentation (README, SECURITY, ARCHITECTURE, INSTALLATION)

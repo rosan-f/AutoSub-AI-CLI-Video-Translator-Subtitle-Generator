@@ -1,10 +1,10 @@
 """
-Security Module — Utilitas keamanan untuk AutoSub-AI.
+AutoSub-AI — Security Utilities
 
-Menyediakan fungsi-fungsi keamanan yang digunakan di seluruh aplikasi:
-- Sanitasi nama file (cegah injection & karakter berbahaya)
-- Safe path resolution (cegah directory traversal)
-- File permission checking
+Provides cross-cutting security functions used throughout the application:
+- Filename sanitization (prevent injection and dangerous characters)
+- Safe path resolution (prevent directory traversal attacks)
+- File permission inspection
 """
 
 from __future__ import annotations
@@ -18,13 +18,14 @@ from autosub_ai.exceptions import SecurityError
 
 logger = logging.getLogger(__name__)
 
-# Karakter yang diizinkan dalam nama file
+# ================================================================
+# Constants
+# ================================================================
+
 SAFE_FILENAME_PATTERN = re.compile(r"[^\w\s\-\.\(\)\[\]]", re.UNICODE)
 
-# Panjang nama file maksimum
 MAX_FILENAME_LENGTH = 200
 
-# Nama file yang dilarang (reserved names di Windows & Unix)
 RESERVED_NAMES: frozenset[str] = frozenset({
     "CON", "PRN", "AUX", "NUL",
     "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
@@ -33,108 +34,119 @@ RESERVED_NAMES: frozenset[str] = frozenset({
 })
 
 
+# ================================================================
+# Filename Sanitization
+# ================================================================
+
+
 def sanitize_filename(filename: str) -> str:
     """
-    Sanitasi nama file — hapus karakter berbahaya.
+    Sanitize a filename by removing dangerous characters.
 
-    Memastikan nama file aman untuk digunakan di semua filesystem
-    dan tidak mengandung komponen path traversal.
+    Ensures the filename is safe for all major filesystems and
+    contains no path traversal components.
 
     Args:
-        filename: Nama file mentah (bisa dari judul video, dll).
+        filename: Raw filename (e.g., from a video title).
 
     Returns:
-        Nama file yang sudah disanitasi.
+        Sanitized filename string.
 
     Raises:
-        SecurityError: Jika nama file tidak bisa disanitasi.
+        SecurityError: If the filename cannot be sanitized.
     """
     if not filename or not isinstance(filename, str):
         return "untitled"
 
-    # Strip whitespace di awal/akhir
     cleaned = filename.strip()
 
-    # Hapus komponen path (hanya ambil basename)
+    # --- Extract basename only ---
     cleaned = os.path.basename(cleaned)
 
-    # Hapus karakter berbahaya
+    # --- Remove unsafe characters ---
     cleaned = SAFE_FILENAME_PATTERN.sub("_", cleaned)
 
-    # Collapse multiple underscores/spaces
+    # --- Collapse multiple underscores/spaces ---
     cleaned = re.sub(r"[_\s]+", "_", cleaned)
 
-    # Strip leading/trailing underscores dan dots
+    # --- Strip leading/trailing punctuation ---
     cleaned = cleaned.strip("_. ")
 
-    # Cek reserved names
+    # --- Block reserved names ---
     name_upper = cleaned.upper().split(".")[0]
     if name_upper in RESERVED_NAMES:
         cleaned = f"file_{cleaned}"
 
-    # Truncate jika terlalu panjang
+    # --- Truncate ---
     if len(cleaned) > MAX_FILENAME_LENGTH:
         cleaned = cleaned[:MAX_FILENAME_LENGTH]
 
-    # Fallback jika hasilnya kosong
+    # --- Fallback ---
     if not cleaned:
         return "untitled"
 
     return cleaned
 
 
+# ================================================================
+# Path Traversal Guard
+# ================================================================
+
+
 def safe_resolve_path(base_dir: Path, target_path: Path) -> Path:
     """
-    Resolve path secara aman — pastikan hasil tetap di dalam base_dir.
+    Resolve a path safely, ensuring the result stays within base_dir.
 
-    Mencegah directory traversal attacks di mana path seperti
-    '../../etc/passwd' bisa keluar dari direktori yang diizinkan.
+    Prevents directory traversal attacks where paths like
+    '../../etc/passwd' escape the allowed directory.
 
     Args:
-        base_dir: Direktori dasar yang diizinkan.
-        target_path: Path target yang akan di-resolve.
+        base_dir:    The allowed root directory.
+        target_path: The target path to resolve.
 
     Returns:
-        Path yang sudah di-resolve dan aman.
+        Resolved path guaranteed to be within base_dir.
 
     Raises:
-        SecurityError: Jika path resolve ke luar base_dir.
+        SecurityError: If the resolved path escapes base_dir.
     """
-    # Resolve kedua path
     base_resolved = base_dir.resolve()
 
-    # Jika target_path relatif, gabungkan dengan base
     if not target_path.is_absolute():
         full_path = (base_resolved / target_path).resolve()
     else:
         full_path = target_path.resolve()
 
-    # Pastikan hasil masih di dalam base_dir
     try:
         full_path.relative_to(base_resolved)
     except ValueError:
         logger.warning(
-            "Path traversal terdeteksi! base=%s, target=%s, resolved=%s",
+            "Path traversal detected: base=%s, target=%s, resolved=%s",
             base_resolved,
             target_path,
             full_path,
         )
         raise SecurityError(
-            f"Akses ditolak: path '{target_path}' berada di luar direktori yang diizinkan."
+            f"Access denied: path '{target_path}' resolves outside the allowed directory."
         )
 
     return full_path
 
 
+# ================================================================
+# Permission Inspection
+# ================================================================
+
+
 def check_file_permissions(path: Path) -> dict[str, bool]:
     """
-    Periksa permission file/direktori.
+    Inspect file or directory permissions.
 
     Args:
-        path: Path ke file atau direktori.
+        path: Path to the file or directory.
 
     Returns:
-        Dictionary dengan status permission.
+        Dictionary mapping permission names to boolean status.
     """
     resolved = path.resolve()
 
