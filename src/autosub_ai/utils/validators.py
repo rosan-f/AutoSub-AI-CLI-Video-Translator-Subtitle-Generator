@@ -76,10 +76,6 @@ def validate_url(url: str) -> str:
     if len(url) > MAX_URL_LENGTH:
         raise InvalidURLError(f"URL exceeds maximum length ({MAX_URL_LENGTH} chars)")
 
-    # --- Format check ---
-    if not URL_PATTERN.match(url):
-        raise InvalidURLError(url)
-
     # --- Parse and validate components ---
     try:
         parsed = urlparse(url)
@@ -89,6 +85,10 @@ def validate_url(url: str) -> str:
     if parsed.scheme not in ("http", "https"):
         raise InvalidURLError(f"Unsupported scheme: {parsed.scheme}")
 
+    # --- Reject embedded credentials ---
+    if parsed.username or parsed.password:
+        raise InvalidURLError("URL must not contain credentials")
+
     domain = parsed.hostname
     if domain is None or domain not in ALLOWED_DOMAINS:
         raise InvalidURLError(
@@ -96,9 +96,9 @@ def validate_url(url: str) -> str:
             f"Allowed: {', '.join(sorted(ALLOWED_DOMAINS))}"
         )
 
-    # --- Reject embedded credentials ---
-    if parsed.username or parsed.password:
-        raise InvalidURLError("URL must not contain credentials")
+    # --- Format check ---
+    if not URL_PATTERN.match(url):
+        raise InvalidURLError(url)
 
     return url
 

@@ -53,7 +53,7 @@ class SRTFormatter:
 
     def __post_init__(self) -> None:
         """Create output directory if it does not exist."""
-        self.output_dir = safe_resolve_path(Path.cwd(), self.output_dir)
+        self.output_dir = self.output_dir.resolve()
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     # ----------------------------------------------------------------
@@ -123,7 +123,9 @@ class SRTFormatter:
         """
         try:
             safe_name = sanitize_filename(filename)
-            output_path = self.output_dir / f"{safe_name}.srt"
+            output_path = safe_resolve_path(
+                self.output_dir, Path(f"{safe_name}.srt")
+            )
 
             # --- Atomic write ---
             temp_fd = tempfile.NamedTemporaryFile(

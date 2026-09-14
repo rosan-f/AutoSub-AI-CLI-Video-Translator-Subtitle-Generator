@@ -57,6 +57,9 @@ autosub-ai transcribe "URL" --model large --language id
 # Specify output directory
 autosub-ai transcribe "URL" --output ./subtitles
 
+# Download audio only (no transcription)
+autosub-ai download "URL" --format mp3 --output-dir ./audio
+
 # Check system info
 autosub-ai info
 
@@ -131,7 +134,7 @@ mypy src/autosub_ai/
 ## Roadmap
 
 - [x] Phase 1: Project structure and foundation
-- [ ] Phase 2: Downloader Module implementation
+- [x] Phase 2: Downloader Module implementation
 - [ ] Phase 3: Transcription Engine implementation
 - [ ] Phase 4: Translator and Formatter implementation
 - [ ] Phase 5: Debian packaging and distribution

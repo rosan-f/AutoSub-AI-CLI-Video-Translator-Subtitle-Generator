@@ -15,3 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Debian packaging skeleton
 - Comprehensive test suite
 - Project documentation (README, SECURITY, ARCHITECTURE, INSTALLATION)
+- Fully functional audio downloader with yt-dlp integration
+- Rich progress bar for download status display
+- Standalone `download` command for audio-only extraction
+- FFmpeg availability check on startup
+- Audio format validation (wav, mp3, m4a, flac, opus)
+- Temporary file cleanup after download
+- Video metadata extraction via `extract_info()` method
+- Download progress callback system
+- GPU detection in `info` command
