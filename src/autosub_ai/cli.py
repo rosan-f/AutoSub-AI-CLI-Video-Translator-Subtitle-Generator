@@ -34,48 +34,10 @@ app = typer.Typer(
     name=__app_name__,
     help="AutoSub-AI: CLI Video Translator & Subtitle Generator",
     add_completion=False,
-    rich_markup_mode="rich",
     no_args_is_help=True,
 )
+
 console = Console()
-
-
-# ================================================================
-# Callbacks
-# ================================================================
-
-
-def version_callback(value: bool) -> None:
-    """Display version and exit."""
-    if value:
-        console.print(
-            Panel(
-                f"[bold cyan]{__app_name__}[/bold cyan] v{__version__}",
-                title="Version",
-                border_style="bright_blue",
-            )
-        )
-        raise typer.Exit()
-
-
-@app.callback()
-def main(
-    version: Annotated[
-        Optional[bool],
-        typer.Option(
-            "--version",
-            "-V",
-            help="Show AutoSub-AI version.",
-            callback=version_callback,
-            is_eager=True,
-        ),
-    ] = None,
-) -> None:
-    """
-    [bold]AutoSub-AI[/bold]: CLI Video Translator & Subtitle Generator
-
-    Automates video transcription and translation into .srt subtitle files.
-    """
 
 
 # ================================================================
@@ -85,9 +47,9 @@ def main(
 
 @app.command()
 def transcribe(
-    url: Annotated[
+    source: Annotated[
         str,
-        typer.Argument(help="Video URL to transcribe (YouTube, etc.)."),
+        typer.Argument(help="Video URL or local audio/video file path to process."),
     ],
     model: Annotated[
         str,
@@ -105,6 +67,14 @@ def transcribe(
             help="Target translation language code (ISO 639-1, e.g.: id, en, ja).",
         ),
     ] = "id",
+    task: Annotated[
+        str,
+        typer.Option(
+            "--task",
+            "-t",
+            help="Whisper task: 'transcribe' (native language) or 'translate' (to English).",
+        ),
+    ] = "transcribe",
     output: Annotated[
         Path,
         typer.Option(
@@ -140,38 +110,78 @@ def transcribe(
     """
     Transcribe and translate a video into an .srt subtitle file.
 
-    Pipeline: Download Audio > Transcribe (Whisper) > Translate > Generate .srt
+    Accepts either an online video URL (e.g. YouTube) or a local media file.
+    Pipeline: Ingest/Download > Transcribe (Whisper) > Translate > Generate .srt
     """
     # --- Logger Setup ---
     logger = setup_logger(verbose=verbose)
     logger.info("AutoSub-AI started")
 
     # --- Input Validation ---
-    from autosub_ai.utils.validators import validate_model_size, validate_url
+    from autosub_ai.utils.validators import validate_file_path, validate_model_size, validate_url
 
-    validated_url = validate_url(url)
     validated_model = validate_model_size(model)
+    local_candidate = Path(source)
+    is_local_file = local_candidate.exists() and local_candidate.is_file()
+
+    if is_local_file:
+        validated_source = str(validate_file_path(local_candidate))
+        source_type = "Local File"
+    else:
+        validated_source = validate_url(source)
+        source_type = "Remote URL"
 
     console.print(
         Panel(
-            f"[bold green]URL:[/bold green]        {validated_url}\n"
-            f"[bold green]Model:[/bold green]      {validated_model}\n"
-            f"[bold green]Language:[/bold green]    {language}\n"
-            f"[bold green]Output:[/bold green]      {output.resolve()}\n"
-            f"[bold green]Keep Audio:[/bold green]  {keep_audio}",
+            f"[bold green]Source ({source_type}):[/bold green] {validated_source}\n"
+            f"[bold green]Model:[/bold green]          {validated_model}\n"
+            f"[bold green]Task:[/bold green]           {task}\n"
+            f"[bold green]Target Language:[/bold green] {language}\n"
+            f"[bold green]Output:[/bold green]          {output.resolve()}\n"
+            f"[bold green]Keep Audio:[/bold green]      {keep_audio}",
             title="Configuration",
             border_style="bright_green",
         )
     )
 
-    try:
-        # --- Phase 1: Download Audio ---
-        _run_download(validated_url, download_dir)
+    downloaded_audio_path: Optional[Path] = None
 
-        # --- Phase 2+: Pipeline (to be implemented) ---
+    try:
+        # --- Phase 1: Obtain Audio Source ---
+        if is_local_file:
+            audio_path = local_candidate
+        else:
+            download_result = _run_download(validated_source, download_dir)
+            audio_path = download_result.audio_path
+            downloaded_audio_path = audio_path
+
+        # --- Phase 2: Speech-to-Text Transcription ---
+        transcription = _run_transcription(
+            audio_path=audio_path,
+            model_size=validated_model,
+            task=task,
+        )
+
+        # --- Display Transcription Summary ---
+        table = Table(title="Transcription Complete", border_style="bright_green")
+        table.add_column("Field", style="bold")
+        table.add_column("Value")
+        table.add_row("Detected Language", transcription.language)
+        table.add_row("Duration", f"{transcription.duration / 60:.1f} min ({transcription.duration:.1f}s)")
+        table.add_row("Segments", str(len(transcription.segments)))
+        preview = transcription.text[:120] + "..." if len(transcription.text) > 120 else transcription.text
+        table.add_row("Text Preview", preview or "[dim]No text detected[/dim]")
+
+        console.print()
+        console.print(table)
+
+        # --- Cleanup audio if requested ---
+        if downloaded_audio_path and not keep_audio and downloaded_audio_path.exists():
+            downloaded_audio_path.unlink()
+            logger.debug("Cleaned up temporary audio: %s", downloaded_audio_path)
+
         console.print(
-            "\n[yellow]Transcription pipeline not yet implemented. "
-            "Coming in Phase 3.[/yellow]\n"
+            "\n[dim]Translation and subtitle export will be executed in Phase 4.[/dim]\n"
         )
 
     except AutoSubError as e:
@@ -256,10 +266,20 @@ def info() -> None:
 
         if torch.cuda.is_available():
             gpu_status = f"CUDA ({torch.cuda.get_device_name(0)})"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            gpu_status = "Apple Silicon MPS"
         else:
             gpu_status = "CPU only (no CUDA)"
     except ImportError:
         gpu_status = "PyTorch not installed"
+
+    whisper_status = "Not installed"
+    try:
+        import whisper  # noqa: F401
+
+        whisper_status = "Installed"
+    except ImportError:
+        whisper_status = "Not installed (pip install openai-whisper)"
 
     console.print(
         Panel(
@@ -268,7 +288,8 @@ def info() -> None:
             f"[cyan]Platform:[/cyan]  {platform.system()} {platform.release()}\n"
             f"[cyan]FFmpeg:[/cyan]    {'Found' if shutil.which('ffmpeg') else 'Not found'}\n"
             f"[cyan]yt-dlp:[/cyan]    {'Found' if shutil.which('yt-dlp') else 'Not found'}\n"
-            f"[cyan]GPU:[/cyan]       {gpu_status}",
+            f"[cyan]Whisper:[/cyan]   {whisper_status}\n"
+            f"[cyan]Compute:[/cyan]   {gpu_status}",
             title="System Info",
             border_style="bright_cyan",
         )
@@ -354,3 +375,44 @@ def _run_download(
     downloader.cleanup(keep_file=result.audio_path)
 
     return result
+
+
+def _run_transcription(
+    audio_path: Path,
+    model_size: str = "base",
+    task: str = "transcribe",
+    source_language: Optional[str] = None,
+) -> "TranscriptionResult":
+    """
+    Execute speech-to-text transcription with Rich progress feedback.
+
+    Args:
+        audio_path:      Path to the target audio file.
+        model_size:      Whisper model variant.
+        task:            Inference task ('transcribe' or 'translate').
+        source_language: Optional language hint.
+
+    Returns:
+        TranscriptionResult containing parsed segments.
+    """
+    from autosub_ai.core.transcriber import (
+        TranscriptionOptions,
+        TranscriptionProgress,
+        TranscriptionResult,
+        WhisperTranscriber,
+    )
+
+    options = TranscriptionOptions(task=task)
+
+    def on_progress(p: TranscriptionProgress) -> None:
+        if p.message:
+            console.print(f"[dim]{p.message}[/dim]")
+
+    with console.status(f"[bold cyan]Transcribing with Whisper ({model_size})...[/bold cyan]"):
+        with WhisperTranscriber(
+            model_size=model_size,
+            language=source_language,
+            options=options,
+            on_progress=on_progress,
+        ) as transcriber:
+            return transcriber.transcribe(audio_path)

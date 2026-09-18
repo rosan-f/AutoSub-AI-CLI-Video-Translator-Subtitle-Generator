@@ -57,10 +57,19 @@ autosub-ai transcribe "URL" --model large --language id
 # Specify output directory
 autosub-ai transcribe "URL" --output ./subtitles
 
+# Transcribe an online video URL
+autosub-ai transcribe "https://www.youtube.com/watch?v=example"
+
+# Transcribe a local audio/video file directly
+autosub-ai transcribe ./meeting_recording.wav
+
+# Use a larger Whisper model with English translation task
+autosub-ai transcribe "URL" --model large --task translate
+
 # Download audio only (no transcription)
 autosub-ai download "URL" --format mp3 --output-dir ./audio
 
-# Check system info
+# Check system info and compute device
 autosub-ai info
 
 # Verbose mode
@@ -135,7 +144,7 @@ mypy src/autosub_ai/
 
 - [x] Phase 1: Project structure and foundation
 - [x] Phase 2: Downloader Module implementation
-- [ ] Phase 3: Transcription Engine implementation
+- [x] Phase 3: Transcription Engine implementation
 - [ ] Phase 4: Translator and Formatter implementation
 - [ ] Phase 5: Debian packaging and distribution
 

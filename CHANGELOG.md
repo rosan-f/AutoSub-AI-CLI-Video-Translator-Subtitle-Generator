@@ -24,3 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Video metadata extraction via `extract_info()` method
 - Download progress callback system
 - GPU detection in `info` command
+- Whisper-powered transcription engine with model size validation
+- Automatic compute device detection (CUDA, MPS, CPU)
+- Dynamic FP16 precision control based on device availability
+- Structured `TranscriptionOptions` configuration (beam size, temperature, task)
+- Real-time `TranscriptionProgress` event callback system
+- Context manager protocol for deterministic GPU/model memory cleanup
+- Local file input support in CLI `transcribe` command alongside URLs
+- Transcription summary table with duration, language, and preview display
